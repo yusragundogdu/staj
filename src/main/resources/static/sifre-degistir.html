@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Armelsan Sinyal İşleme - Şifre Güncelleme</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            overflow: hidden;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo-area h2 { color: #1e3c72; margin-bottom: 5px; font-size: 24px; }
+        .logo-area p { color: #7f8c8d; font-size: 14px; margin-bottom: 30px; }
+
+        .form-group { margin-bottom: 20px; text-align: left; display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 14px; font-weight: 600; color: #333; }
+        .form-group input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; transition: border 0.3s; }
+        .form-group input:focus { border-color: #2a5298; outline: none; }
+
+        .login-btn {
+            width: 100%; background-color: #27ae60; color: white; border: none; padding: 12px;
+            border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px;
+        }
+        .login-btn:hover { background-color: #219653; }
+        .message-div { font-size: 13px; margin-top: 15px; display: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="logo-area">
+        <h2>ŞİFRE DEĞİŞTİRME</h2>
+        <p>İlk girişiniz olduğu için lütfen yeni bir şifre belirleyin.</p>
+    </div>
+
+    <form id="password-form">
+        <div class="form-group">
+            <label for="new-password">Yeni Şifre:</label>
+            <input type="password" id="new-password" required placeholder="••••••••">
+        </div>
+
+        <div class="form-group">
+            <label for="confirm-password">Yeni Şifre (Tekrar):</label>
+            <input type="password" id="confirm-password" required placeholder="••••••••">
+        </div>
+
+        <button type="button" class="login-btn" onclick="submitNewPassword(event)">Şifreyi Güncelle ve Giriş Yap</button>
+
+        <div id="message-box" class="message-div"></div>
+    </form>
+</div>
+
+<script>
+    function submitNewPassword(e) {
+        e.preventDefault();
+
+        var newPass = document.getElementById('new-password').value;
+        var confirmPass = document.getElementById('confirm-password').value;
+        var msgBox = document.getElementById('message-box');
+
+        if(newPass.trim() === "" || confirmPass.trim() === "") {
+            msgBox.style.display = 'block';
+            msgBox.style.color = '#e74c3c';
+            msgBox.innerText = "❌ Lütfen alanları boş bırakmayın.";
+            return;
+        }
+
+        if(newPass !== confirmPass) {
+            msgBox.style.display = 'block';
+            msgBox.style.color = '#e74c3c';
+            msgBox.innerText = "❌ Şifreler birbiriyle eşleşmiyor!";
+            return;
+        }
+
+        var tempUserJson = localStorage.getItem('tempUser');
+        if(!tempUserJson) {
+            window.location.href = '/index.html';
+            return;
+        }
+        var tempUser = JSON.parse(tempUserJson);
+
+        var payload = {
+            id: tempUser.id,
+            newPassword: newPass
+        };
+
+        fetch('/api/users/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(function(res) {
+                if(res.ok) {
+                    msgBox.style.display = 'block';
+                    msgBox.style.color = '#27ae60';
+                    msgBox.innerText = "✅ Şifreniz başarıyla değiştirildi! Yönlendiriliyorsunuz...";
+
+                    // Geçici kartı sil, tam yetkili kartı tak
+                    localStorage.removeItem('tempUser');
+
+                    // Giriş başarılı sayılması için güncellenmiş objeyi kaydedelim
+                    tempUser.requiresPasswordChange = false;
+                    localStorage.setItem('loggedInUser', JSON.stringify(tempUser));
+
+                    setTimeout(function() {
+                        window.location.href = '/admin.html';
+                    }, 2000);
+                } else {
+                    msgBox.style.display = 'block';
+                    msgBox.style.color = '#e74c3c';
+                    msgBox.innerText = "❌ Şifre güncellenirken bir hata oluştu.";
+                }
+            })
+            .catch(function(err) {
+                msgBox.style.display = 'block';
+                msgBox.style.color = '#e74c3c';
+                msgBox.innerText = "Sunucu bağlantı hatası!";
+            });
+    }
+</script>
+</body>
+</html>

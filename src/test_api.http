@@ -1,0 +1,19 @@
+### 1. Hatalı E-posta Testi (Sistem Reddetmeli)
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "armelsan_operator",
+  "email": "gecersiz-eposta-adresi"
+}
+
+###
+
+
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "armelsan_operator",
+  "email": "operator@armelsan.com"
+}

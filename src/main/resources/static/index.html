@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Armelsan Sinyal İşleme - Giriş</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            overflow: hidden;
+        }
+
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .radar-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 2px solid #00ff88;
+            background:
+                    radial-gradient(circle, transparent 25px, rgba(0, 255, 136, 0.2) 26px, transparent 27px),
+                    radial-gradient(circle, transparent 50px, rgba(0, 255, 136, 0.2) 51px, transparent 52px),
+                    linear-gradient(90deg, transparent 49%, rgba(0, 255, 136, 0.4) 50%, transparent 51%),
+                    linear-gradient(0deg, transparent 49%, rgba(0, 255, 136, 0.4) 50%, transparent 51%);
+            position: relative;
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.5);
+            overflow: hidden;
+        }
+
+        .radar-container::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 50%; height: 50%;
+            background: conic-gradient(from 0deg, transparent 70%, rgba(0, 255, 136, 0.9) 100%);
+            transform-origin: 0% 0%;
+            animation: scan 1.5s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .splash-text {
+            color: #00ff88;
+            margin-top: 25px;
+            font-size: 16px;
+            letter-spacing: 4px;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.6s ease;
+        }
+
+        .login-card.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .logo-area h2 { color: #1e3c72; margin-bottom: 5px; font-size: 24px; }
+        .logo-area p { color: #7f8c8d; font-size: 14px; margin-bottom: 30px; }
+
+        .form-group { margin-bottom: 20px; text-align: left; display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 14px; font-weight: 600; color: #333; }
+        .form-group input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; transition: border 0.3s; }
+        .form-group input:focus { border-color: #2a5298; outline: none; }
+
+        .login-btn {
+            width: 100%; background-color: #1e3c72; color: white; border: none; padding: 12px;
+            border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px;
+        }
+        .login-btn:hover { background-color: #1a3360; }
+        .error-msg { font-size: 13px; margin-top: 15px; display: none; font-weight: bold; }
+        .tab-container { display: flex; margin-bottom: 20px; border-bottom: 2px solid #ecf0f1; }
+        .tab-btn {
+            flex: 1; padding: 10px; background: none; border: none; font-size: 14px;
+            font-weight: 600; color: #7f8c8d; cursor: pointer; transition: all 0.3s;
+        }
+        .tab-btn.active { color: #1e3c72; border-bottom: 3px solid #1e3c72; }
+    </style>
+</head>
+<body>
+
+<div id="splash-screen">
+    <div class="radar-container"></div>
+    <div class="splash-text">SİSTEM BAŞLATILIYOR...</div>
+</div>
+
+<div class="login-card" id="login-card">
+    <div class="logo-area">
+        <h2>ARMELSAN</h2>
+        <p>Sinyal Takip & Görev Yönetim Sistemi</p>
+    </div>
+
+    <div class="tab-container">
+        <button class="tab-btn active" id="tab-registered" onclick="switchTab('registered')">Kayıtlı Kullanıcı</button>
+        <button class="tab-btn" id="tab-new" onclick="switchTab('new')">Yeni Üye İlk Giriş</button>
+    </div>
+
+    <form id="login-form">
+        <div class="form-group">
+            <label for="username">Kullanıcı Adı:</label>
+            <input type="text" id="username" autocomplete="username" required placeholder="Kullanıcı adınızı girin">
+        </div>
+
+        <div class="form-group">
+            <label for="email">E-Posta Adresi:</label>
+            <input type="email" id="email" autocomplete="email" required placeholder="adiniz@hotmail.com">
+        </div>
+
+        <div class="form-group">
+            <label id="password-label" for="password">Şifre:</label>
+            <input type="password" id="password" required placeholder="••••••••">
+        </div>
+
+        <button type="button" class="login-btn" id="submit-btn" onclick="handleLogin(event)">Sisteme Giriş Yap</button>
+
+        <div id="error-message" class="error-msg"></div>
+    </form>
+</div>
+
+<script>
+
+    setTimeout(function() {
+        var splash = document.getElementById('splash-screen');
+        var loginCard = document.getElementById('login-card');
+
+        if (splash && loginCard) {
+            splash.style.opacity = '0';
+            setTimeout(function() {
+                splash.style.display = 'none';
+                loginCard.classList.add('show');
+            }, 500);
+        }
+    }, 2000);
+    function switchTab(tabType) {
+
+        document.getElementById('tab-registered').classList.remove('active');
+        document.getElementById('tab-new').classList.remove('active');
+        document.getElementById('tab-' + tabType).classList.add('active');
+
+        var passLabel = document.getElementById('password-label');
+        var passInput = document.getElementById('password');
+        var submitBtn = document.getElementById('submit-btn');
+
+        if (tabType === 'new') {
+            passLabel.innerText = "Geçici Şifre (123):";
+            passInput.placeholder = "Yöneticinizin verdiği geçici şifre";
+            submitBtn.innerText = "Şifremi Belirle ve Giriş Yap";
+            submitBtn.style.backgroundColor = "#e67e22"; // Yeni üyelere turuncu buton
+        } else {
+            passLabel.innerText = "Kişisel Şifreniz:";
+            passInput.placeholder = "Kendi belirlediğiniz gizli şifre";
+            submitBtn.innerText = "Sisteme Giriş Yap";
+            submitBtn.style.backgroundColor = "#1e3c72"; // Kayıtlılara lacivert buton
+        }
+    }
+    function handleLogin(e) {
+        e.preventDefault();
+
+        var usernameInput = document.getElementById('username').value.trim();
+        var emailInput = document.getElementById('email').value.trim();
+        var passwordInput = document.getElementById('password').value.trim();
+        var errorDiv = document.getElementById('error-message');
+
+        if(usernameInput === "" || emailInput === "" || passwordInput === "") {
+            errorDiv.style.display = 'block';
+            errorDiv.style.color = '#e74c3c';
+            errorDiv.innerText = "Lütfen tüm alanları doldurun!";
+            return;
+        }
+
+
+        var payload = {
+            username: usernameInput,
+            email: emailInput,
+            password: passwordInput
+        };
+
+        fetch('/api/users/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(function(res) {
+                if (res.ok) {
+                    return res.json(); // Şifre doğruysa DTO gelir
+                } else {
+                    throw new Error("Giriş Başarısız"); // Şifre yanlışsa hata fırlat
+                }
+            })
+            .then(function(foundUser) {
+                errorDiv.style.display = 'block';
+                errorDiv.style.color = '#27ae60';
+
+                if (foundUser.requiresPasswordChange === true) {
+                    errorDiv.innerText = "⚠️ Güvenlik gereği şifrenizi değiştirmeniz gerekiyor...";
+                    localStorage.setItem('tempUser', JSON.stringify(foundUser));
+                    setTimeout(function() { window.location.href = '/sifre-degistir.html'; }, 2000);
+                } else {
+                    errorDiv.innerText = "✅ Giriş Başarılı! Yönetim Paneline yönlendiriliyorsunuz...";
+                    localStorage.setItem('loggedInUser', JSON.stringify(foundUser));
+                    setTimeout(function() { window.location.href = '/admin.html'; }, 2000);
+                }
+            })
+            .catch(function(err) {
+                errorDiv.style.display = 'block';
+                errorDiv.style.color = '#e74c3c';
+                errorDiv.innerText = "❌ Giriş Başarısız: Bilgiler hatalı veya yetkisiz erişim.";
+            });
+    }
+</script>
+</body>
+</html>

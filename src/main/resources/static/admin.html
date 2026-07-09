@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Armelsan Sinyal - Gelişmiş Admin Paneli</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
+
+        .sidebar { width: 260px; background-color: #2c3e50; color: white; padding: 20px; display: flex; flex-direction: column; gap: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .sidebar h2 { font-size: 20px; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #34495e; color: #ecf0f1; }
+        .menu-section { display: flex; flex-direction: column; gap: 10px; }
+        .menu-section h3 { font-size: 12px; text-transform: uppercase; color: #95a5a6; letter-spacing: 1px; margin-top: 10px; }
+        .menu-btn { background: none; border: none; color: #bdc3c7; text-align: left; padding: 10px; font-size: 14px; cursor: pointer; border-radius: 5px; transition: all 0.3s; }
+        .menu-btn:hover, .menu-btn.active { background-color: #34495e; color: white; font-weight: bold; }
+
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        h1, h2 { color: #2c3e50; margin-bottom: 15px; }
+
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 14px; font-weight: 600; color: #555; }
+        .form-group input, .form-group select, .form-group textarea { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        .submit-btn { background-color: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        .submit-btn:hover { background-color: #219653; }
+
+        .table-responsive { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; background: white; font-size: 14px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #2c3e50; font-weight: 600; }
+        tr:hover { background-color: #f1f2f6; }
+
+        .delete-btn { background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .delete-btn:hover { background-color: #c0392b; }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Armelsan Kontrol</h2>
+
+    <div class="menu-section">
+        <h3>Gösterge Paneli</h3>
+        <button class="menu-btn active" onclick="showPanel('tasks-panel')">📋 Görev Tablosu</button>
+    </div>
+
+    <div class="menu-section">
+        <h3>Yönetim İşlemleri</h3>
+        <button id="btn-add-task" class="menu-btn" onclick="showPanel('add-task-panel')">➕ Görev Ekle</button>
+        <button id="btn-users" class="menu-btn" onclick="showPanel('users-panel')">👤 Kullanıcı Ekle / Sil</button>
+        <button id="btn-departments" class="menu-btn" onclick="showPanel('departments-panel')">🏢 Departman Ekle / Sil</button>
+
+        <button class="menu-btn" style="color:#e74c3c; margin-top: 30px; font-weight:bold;" onclick="logout()">🚪 Çıkış Yap</button>
+    </div>
+</div>
+
+<div class="main-content">
+
+    <div id="tasks-panel" class="panel active">
+        <div class="card">
+            <h2>Mevcut Görev Durumları</h2>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>İş Detayı</th>
+                        <th>Gözlemci Personeller</th>
+                        <th>İş Başlangıcı</th>
+                        <th>Bitiş Tarihi</th>
+                        <th>Oluşturulma Tarihi</th>
+                        <th>Atanan Kişi (User)</th>
+                        <th>İşlemler</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tasks-table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-task-panel" class="panel">
+        <div class="card">
+            <h2>Yeni Görev Tanımla</h2>
+            <form id="task-form" onsubmit="saveTask(event)">
+                <div class="form-group">
+                    <label>İşin Detayı / Tanımı:</label>
+                    <textarea id="task-tanim" rows="3" required placeholder="Görevin teknik detaylarını yazınız..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Gözlemci Personeller (Birden fazla seçmek için CTRL'ye basılı tutun):</label>
+                    <select id="task-observers" multiple style="height: 80px; padding: 5px;">
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>İşin Başlangıcı:</label>
+                    <input type="datetime-local" id="task-start" required>
+                </div>
+                <div class="form-group">
+                    <label>Bitiş Tarihi:</label>
+                    <input type="datetime-local" id="task-due" required>
+                </div>
+                <div class="form-group">
+                    <label>Görevin Atanacağı Personel:</label>
+                    <select id="task-assignee" required><option value="">Seçiniz...</option></select>
+                </div>
+                <button type="submit" class="submit-btn">Görevi Dağıt ve Kaydet</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="users-panel" class="panel">
+        <div class="card">
+            <h2>Yeni Kullanıcı Kaydı</h2>
+            <form id="user-form" onsubmit="saveUser(event)">
+                <div class="form-group">
+                    <label>Kullanıcı Adı:</label>
+                    <input type="text" id="user-username" required placeholder="Örn: ahmet_muhendis">
+                </div>
+                <div class="form-group">
+                    <label>Geçici Şifre (Sistem tarafından atanmıştır.):</label>
+                    <input type="text" id="user-password" value="123" readonly
+                           style="background-color: #e9ecef; color: #7f8c8d; cursor: not-allowed; font-weight: bold;">
+                </div>
+                <div class="form-group">
+                    <label>E-Posta Adresi:</label>
+                    <input type="email" id="user-email" required placeholder="Örn: ahmet@hotmail.com">
+                </div>
+                <div class="form-group">
+                    <label>Departman Seçin:</label>
+                    <select id="user-department" required><option value="">Seçiniz...</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Sistem Rolü:</label>
+                    <select id="user-role">
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">Kullanıcıyı Kaydet</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Sistemdeki Kullanıcılar</h2>
+            <table>
+                <thead>
+                <tr><th>ID</th><th>Kullanıcı Adı</th><th>E-Posta</th><th>Departman</th><th>Rol</th><th>İşlemler</th></tr>
+                </thead>
+                <tbody id="users-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="departments-panel" class="panel">
+        <div class="card">
+            <h2>Yeni Departman Tanımla</h2>
+            <form id="dept-form" onsubmit="saveDepartment(event)">
+                <div class="form-group">
+                    <label>Departman Adı:</label>
+                    <input type="text" id="dept-name" required placeholder="Örn: Sinyal İşleme Daire Bşk.">
+                </div>
+                <button type="submit" class="submit-btn">Departman Ekle</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Aktif Departmanlar</h2>
+            <table>
+                <thead><tr><th>ID</th><th>Departman Adı</th><th>İşlemler</th></tr></thead>
+                <tbody id="departments-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+    var userJson = localStorage.getItem('loggedInUser');
+
+    if (!userJson) {
+        window.location.href = '/';
+    } else {
+        var currentUser = JSON.parse(userJson);
+
+        window.addEventListener('load', function() {
+            if (currentUser.role === 'ADMIN') {
+                var btn = document.getElementById('btn-departments');
+                if(btn) btn.style.display = 'none';
+            }
+            else if (currentUser.role === 'USER') {
+                var btnDept = document.getElementById('btn-departments');
+                var btnUser = document.getElementById('btn-users');
+                if(btnDept) btnDept.style.display = 'none';
+                if(btnUser) btnUser.style.display = 'none';
+            }
+        });
+    }
+
+    function logout() {
+        localStorage.removeItem('loggedInUser');
+        window.location.href = '/';
+    }
+
+
+    function showPanel(panelId) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+
+        document.getElementById(panelId).classList.add('active');
+        event.target.classList.add('active');
+
+        if(panelId === 'tasks-panel') loadTasks();
+        if(panelId === 'users-panel') { loadUsers(); loadDropdownDepartments('user-department'); }
+        if(panelId === 'add-task-panel') { loadDropdownUsers(); }
+        if(panelId === 'departments-panel') loadDepartments();
+    }
+
+    function formatDateTime(dateStr) {
+        if(!dateStr) return "-";
+        const d = new Date(dateStr);
+        return d.toLocaleString('tr-TR');
+    }
+
+    function loadDepartments() {
+        fetch('/api/departments').then(res => res.json()).then(data => {
+            const tbody = document.getElementById('departments-table-body');
+            tbody.innerHTML = data.map(d => `
+                    <tr><td>${d.id}</td><td>${d.name}</td>
+                    <td><button class="delete-btn" onclick="deleteDept(${d.id})">Sil</button></td></tr>
+                `).join('');
+        });
+    }
+
+    function saveDepartment(e) {
+        e.preventDefault();
+        const name = document.getElementById('dept-name').value;
+        fetch('/api/departments', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name})
+        }).then(() => { document.getElementById('dept-form').reset(); loadDepartments(); });
+    }
+
+    function deleteDept(id) {
+        if(confirm('Bu departmanı silmek istediğinize emin misiniz?')) {
+            fetch(`/api/departments/${id}`, {method: 'DELETE'}).then(() => loadDepartments());
+        }
+    }
+
+    function loadUsers() {
+        fetch('/api/users').then(res => res.json()).then(data => {
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = data.map(u => `
+                    <tr><td>${u.id}</td><td>${u.username}</td><td>${u.email}</td>
+                    <td>${u.department ? u.department.name : '-'}</td><td>${u.role}</td>
+                    <td><button class="delete-btn" onclick="deleteUser(${u.id})">Sil</button></td></tr>
+                `).join('');
+        });
+    }
+
+    function saveUser(e) {
+        e.preventDefault();
+        const payload = {
+            username: document.getElementById('user-username').value,
+            password: document.getElementById("user-password").value,
+            email: document.getElementById('user-email').value,
+            role: document.getElementById('user-role').value,
+            department: { id: document.getElementById('user-department').value }
+
+        };
+        fetch('/api/users', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        }).then(res => {
+            if(!res.ok) return res.json().then(err => alert(err.message || "Hata oluştu! (Hotmail kontrolünü unuttunuz mu?)"));
+            document.getElementById('user-form').reset();
+            loadUsers();
+        });
+    }
+
+    function deleteUser(id) {
+        if(confirm('Kullanıcıyı sistemden siliyorsunuz?')) {
+            fetch(`/api/users/${id}`, {method: 'DELETE'}).then(() => loadUsers());
+        }
+    }
+
+    function loadTasks() {
+        fetch('/api/tasks').then(res => res.json()).then(data => {
+            const tbody = document.getElementById('tasks-table-body');
+            const suAnkiZaman = new Date();
+
+            tbody.innerHTML = data.map(t => {
+                const bitisTarihi = new Date(t.dueDate);
+                let uyariMesaji = "";
+
+                if (bitisTarihi < suAnkiZaman) {
+                    uyariMesaji = `<br><span style="color: #e74c3c; font-weight: bold; font-size: 12px; background-color: #fce4e4; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 5px;">⚠️ Süresi Geçti</span>`;
+                }
+
+                // Eğer giren kişi normal USER ise görev silemesin
+                let silButonu = `<button class="delete-btn" onclick="deleteTask(${t.id})">Sil</button>`;
+                if (currentUser && currentUser.role === 'USER') {
+                    silButonu = `<span style="color:#95a5a6; font-size:12px;">Yetkisiz</span>`;
+                }
+
+                return `
+                        <tr>
+                            <td>${t.id}</td>
+                            <td style="font-weight:600">${t.tanim}</td>
+                            <td>${t.gozlemciler ? t.gozlemciler.join(', ') : '-'}</td>
+                            <td>${formatDateTime(t.startDate)}</td>
+                            <td>${formatDateTime(t.dueDate)} ${uyariMesaji}</td>
+                            <td>${formatDateTime(t.createdAt)}</td>
+                            <td><mark>${t.assignee ? t.assignee.username : 'Atanmamış'}</mark></td>
+                            <td>${silButonu}</td>
+                        </tr>
+                    `;
+            }).join('');
+        });
+    }
+
+
+
+    function saveTask(e) {
+        e.preventDefault();
+        const startInput = document.getElementById('task-start').value;
+        const dueInput = document.getElementById('task-due').value;
+        const startDate = new Date(startInput);
+        const dueDate = new Date(dueInput);
+
+        if (dueDate < startDate) {
+            alert("🚨 HATA: Bir görevin bitiş tarihi, başlangıç tarihinden ÖNCE olamaz! Lütfen tarihleri düzeltin.");
+            return;
+        }
+
+
+        const selectObj = document.getElementById('task-observers');
+        const selectedObservers = [];
+        for (let i = 0; i < selectObj.options.length; i++) {
+            if (selectObj.options[i].selected) {
+
+                selectedObservers.push({ id: selectObj.options[i].value });
+            }
+        }
+
+        const payload = {
+            tanim: document.getElementById('task-tanim').value,
+            startDate: startInput,
+            dueDate: dueInput,
+            gozlemciler: selectedObservers, // Gözlemci listesi eklendi
+            assignee: { id: document.getElementById('task-assignee').value },
+            creator: { id: currentUser.id } // Görevi oluşturan adminin kendi ID'si
+        };
+
+        fetch('/api/tasks', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        }).then(() => {
+            document.getElementById('task-form').reset();
+            showPanel('tasks-panel');
+        });
+    }
+
+    function deleteTask(id) {
+        if(confirm('Bu görevi silmek istiyor musunuz?')) {
+            fetch(`/api/tasks/${id}`, {method: 'DELETE'}).then(() => loadTasks());
+        }
+    }
+
+    function loadDropdownDepartments(selectId) {
+        fetch('/api/departments').then(res => res.json()).then(data => {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Seçiniz...</option>' + data.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        });
+    }
+
+    function loadDropdownUsers() {
+        fetch('/api/users').then(function(res) { return res.json(); }).then(function(data) {
+            var selectAssignee = document.getElementById('task-assignee');
+            selectAssignee.innerHTML = '<option value="">Seçiniz...</option>' +
+                data.map(function(u) { return `<option value="${u.id}">${u.username}</option>`; }).join('');
+
+
+            var selectObservers = document.getElementById('task-observers');
+            selectObservers.innerHTML = data.map(function(u) { return `<option value="${u.id}">${u.username}</option>`; }).join('');
+        });
+    }
+
+    loadTasks();
+</script>
+</body>
+</html>
